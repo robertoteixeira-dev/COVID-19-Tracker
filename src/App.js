@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { MenuItem, FormControl, Select, Card } from '@mui/material';
+import { MenuItem, FormControl, Select, Card, CardContent } from '@mui/material';
 import InfoBox from './InfoBox';
 import Map from './Map';
+import Table from './Table';
+import { sortData } from "./util";
+import LineGraph from "./LineGraph";
 import './App.css';
 
 function App() {
-  //State is how to write a variable in React
   const [countries, setCountries] = useState([]);
   const [country, setCountry] = useState("worldwide");
+  const [countryInfo, setCountryInfo] = useState({});
+  const [tableData, setTableData] = useState([]);
 
-  //https://disease.sh/v3/covid-19/countries
-
-  // UseEffect runs a piece of code based on a given condition
   useEffect(() => {
-    // The code inside here will run once when the component loads and not again. Only once.
-    // async -> send a request, wait for it, do something with the info
+    fetch("https://disease.sh/v3/covid-19/all")
+    .then(response => response.json())
+    .then(data => {
+      setCountryInfo(data);
+    });
+  }, [])
+
+  useEffect(() => {
     const getCountriesData = async () => {
       fetch("https://disease.sh/v3/covid-19/countries")
         .then((response) => response.json())
@@ -23,6 +30,9 @@ function App() {
             name: country.country,
             value: country.countryInfo.iso2,
           }));
+
+          let sortedData = sortData(data);
+          setTableData(sortedData);
           setCountries(countries);
         });
     };
@@ -32,6 +42,20 @@ function App() {
   const onCountryChange = async (event) => {
     const countryCode = event.target.value;
     setCountry(countryCode);
+
+    const url = countryCode === 'worldwide' 
+    ? 'https://disease.sh/v3/covid-19/all' 
+    : `https://disease.sh/v3/covid-19/countries/${countryCode}`
+
+    await fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        setCountry(countryCode);
+
+        //All of the data
+        //All of the data from the country
+        setCountryInfo(data);
+      })
   };
 
   return (
@@ -62,11 +86,11 @@ function App() {
 
         <div className="app_stats">
           {/* InfoBoxs */}
-          <InfoBox title="Coronavirus Cases" cases={123} total={2000} />
+          <InfoBox title="Coronavirus Cases" cases={countryInfo.todayCases} total={countryInfo.cases} />
 
-          <InfoBox title="Recovered" cases={123} total={2000} />
+          <InfoBox title="Recovered" cases={countryInfo.todayRecovered} total={countryInfo.recovered} />
 
-          <InfoBox title="Deaths" cases={123} total={2000} />
+          <InfoBox title="Deaths" cases={countryInfo.todayDeaths} total={countryInfo.deaths} />
 
         </div>
 
@@ -75,7 +99,16 @@ function App() {
       </div>
 
       <Card className="app_right">
+        <CardContent>
+          {/* Table */}
+          <h3>Live Cases by Country</h3>
+          <Table countries={tableData} />
 
+          {/* Graph */}
+          <h3>Worldwide new cases</h3>
+          <LineGraph />
+
+        </CardContent>
       </Card>
 
     </div>
@@ -90,6 +123,16 @@ export default App;
 /* InfoBoxs */
 /* InfoBoxs */
 /* InfoBoxs */
+/* Maps */
+
 /* Table */
 /* Graph */
-/* Maps */
+
+//State is how to write a variable in React
+ // UseEffect runs a piece of code based on a given condition
+// The code inside here will run once when the component loads and not again. Only once.
+ // async -> send a request, wait for it, do something with the info
+
+  //https://disease.sh/v3/covid-19/countries
+
+
