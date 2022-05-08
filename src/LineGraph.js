@@ -37,6 +37,7 @@ const options = {
                     display: false,
                 },
                 ticks: {
+                    // Include a dollar sign in the ticks
                     callback: function (value, index, values) {
                         return numeral(value).format("0a");
                     },
